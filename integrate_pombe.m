@@ -1,4 +1,4 @@
-function [ analysis] = analyze_pombe( pombe,options)
+function [ analysis] = integrate_pombe( pombe,options)
 %analyze_pombe analyzes the shape of pombe cells
 %   Analyzes a pombe segmentation
 %   Nothing much for now
@@ -13,13 +13,29 @@ end
 points=pombe.points;
 normals=pombe.normals;
 faces=pombe.faces;
-
+R0=options.R0;
 
 %% Pre-treatment
 % Centering of the data...
 np=size(points,1);
+nf=size(faces,1);
 center=mean(points,1);
 points=points-ones(np,1)*center;
+[coefs,points,~]=princom(points);
+normals=normals*coefs;
+
+% Curvature along s
+Cs=zeros(np,1);
+% Curvature along phi
+Cp=zeros(np,1);
+
+%recomputing normals
+norms=get_normals(points,faces,np,nf);
+% forces
+Fpts=zeros(np,3);
+% Interaction matrix
+matR=create_interaction_matrix(points,norms,faces);
+
 
 %% We should rotate points & normals
 % We use PCA to get the eigen vectors of the points
@@ -30,7 +46,7 @@ points=points-ones(np,1)*center;
 % ...
 % Oh wait we don't need the eigen vectors
 % It directly gives us the rotated points !
-[~,points,latXYZ]=princom(points);
+
 % We might need to remember the rotation matrix though, when we do comparisons !
 
 
@@ -81,6 +97,89 @@ end
 
 
 end
+
+
+function [M]=normalize_rows_3D(M)
+M(:,:)=M./(sqrt(sum(M.^2,2))*[1 1 1]);
+end
+
+function [matR]=create_interaction_matrix(points,faces,normsP,normsF)
+% initiation
+np=size(points,1);
+nf=size(faces,1);
+matR=zeros(np,np);
+dir=ones(np,1)*[0 0 1];
+% we create the basis
+n_psi=normalize_rows_3D(cross(normals,dir,2));
+n_sss=cross(n_psi,n_sss,2);
+
+CP=zeros(nf,3);
+CS=zeros(nf,3);
+% Now we need to compute curvatures !
+% Marginal gain
+A=zeros(1,3);
+B=zeros(1,3);
+C=zeros(1,3);
+dir=zeros(1,3);
+pos=zeros(1,3);
+
+gradN=zeros(3,3);
+NP=zeros(3,1);
+NS=zeros(3,1);
+for f=1:nf
+	iA=face(f,1);
+	iB=face(f,2);
+	iC=face(f,3);
+	A(:)=points(iA,:);
+	B(:)=points(iB,:);
+	C(:)=points(iC,:);
+	NP=
+	%% 
+	gradN(:,:)=surface_grad(A,B,normsP(iA,:),normsP(iB,:));
+	C_p=gradN(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+	C_p=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+	
+	dir(:)=cross((B-A),(C-A));
+	surf=surf+norm(dir);
+	pos(:)=(A+B+C);
+	% This is so freacking cool !!!
+	vol=vol+abs(dot(pos,dir));
+end
+	
+
+end
+
+function dNdAB=surface_grad(A,B,nA,nB)
+%invdir=1./(B-A);
+%dN=nB-nA;
+dNdAB=(1./(B-A)')*(nB-nA);
+end
+
+function [normsP,normF]=get_normals(points,faces,np,nf)
+    %nf=size(face,1);
+    %surf=0;
+	%vol=0;
+    % Marginal gain
+	normsP=zeros(np,3);
+	normsF=zeros(np,3);
+    %A=zeros(1,3);
+    %B=zeros(1,3);
+    %C=zeros(1,3);
+    dir=zeros(1,3);
+	col3=ones(3,1);
+    for f=1:nf
+        %A(:)=points(faces(f,1),:);
+        %B(:)=points(faces(f,2),:);
+        %C(:)=points(faces(f,3),:);
+        %dir(:)=cross((B-A),(C-A));
+		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
+		normsP(faces(f),:)=normsP(faces(f),:)+col3*dir;
+		normsF(f,:)=dir;
+    end
+    normsP(:)=normalize_rows_3D(normsF);
+	normsF(:)=normalize_rows_3D(normsP);
+end
+
 
 
 function [surf]=get_surface_slice(per)
