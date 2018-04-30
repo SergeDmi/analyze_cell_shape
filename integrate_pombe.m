@@ -1,4 +1,4 @@
-function [ analysis] = integrate_pombe( pombe,options)
+function [ matR,Cp,Cs,links] = integrate_pombe( pombe,options)
 %analyze_pombe analyzes the shape of pombe cells
 %   Analyzes a pombe segmentation
 %   Nothing much for now
@@ -13,7 +13,7 @@ end
 points=pombe.points;
 normals=pombe.normals;
 faces=pombe.faces;
-R0=options.R0;
+R0=3;
 
 %% Pre-treatment
 % Centering of the data...
@@ -34,66 +34,7 @@ norms=get_normals(points,faces,np,nf);
 % forces
 Fpts=zeros(np,3);
 % Interaction matrix
-matR=create_interaction_matrix(points,norms,faces);
-
-
-%% We should rotate points & normals
-% We use PCA to get the eigen vectors of the points
-%[coeffs]=princom(points);
-% The eigenvectors define a rotation matrix !
-%points=points*coeffs;
-%normals=normals*coeffs;
-% ...
-% Oh wait we don't need the eigen vectors
-% It directly gives us the rotated points !
-
-% We might need to remember the rotation matrix though, when we do comparisons !
-
-
-%% We can already compute surface area.
-[analysis.surface,analysis.volume]=get_surface_volume(points,faces);
-
-%% Now that it's turned, we can compute one or a couple thin slices
-h=options.thickness_central/2.0;
-gl=logical((points(:,1)<h).*(points(:,1)>-h));
-slice=points(gl,:);
-% We do a PCA of the slice on the YZ plane
-[~,sliceYZ,latYZ]=princom(slice(:,2:3));
-% Random definition of circularity
-% This is quite sensitive cause we take variance of points
-% and then sqrt of ratio -> maximum sensitivity !
-analysis.central_circularity=1-sqrt(abs(latYZ(1)-latYZ(2))/sum(latYZ));
-analysis.total_circularity=1-sqrt(abs(latXYZ(3)-latXYZ(3))/sum(latXYZ(2:3)));
-
-analysis.central_r1=sqrt(latYZ(1));
-analysis.central_r2=sqrt(latYZ(2));
-analysis.total_r1=sqrt(latXYZ(2));
-analysis.total_r2=sqrt(latXYZ(3));
-analysis.total_l1=sqrt(latXYZ(1));
-analysis.pt_mean_dist=mean_dist(points,faces);
-% We fit the central slice by a smooth periodic function
-per= smooth_periodic( sliceYZ,options);
-analysis.central_perimeter=seglength(per);
-per=[per,per(:,end)];
-analysis.central_area=get_surface_slice(per);
-
-analysis.length=max(points(:,1))-min(points(:,1));
-
-%% Plotting if we need to
-if options.verbose>0
-    disp(['Volume : ' num2str(analysis.volume) '   ; surface : ' num2str(analysis.surface)]);
-    figure
-    hold all
-    scatter3(points(:,1),points(:,2),points(:,3),5,'k')
-    scatter3(slice(:,1),slice(:,2),slice(:,3),15,'r')
-    axis equal
-    figure
-    scatter(sliceYZ(:,1),sliceYZ(:,2),'r')
-    hold all
-    plot(per(1,:),per(2,:),'k')
-    axis equal
-end
-
+[matR,Cp,Cs,links]=create_interaction_matrix(points,norms,faces);
 
 
 end
@@ -103,49 +44,126 @@ function [M]=normalize_rows_3D(M)
 M(:,:)=M./(sqrt(sum(M.^2,2))*[1 1 1]);
 end
 
-function [matR]=create_interaction_matrix(points,faces,normsP,normsF)
+function [matR,CP,CS,links]=create_interaction_matrix(points,normsP,faces)
 % initiation
 np=size(points,1);
 nf=size(faces,1);
+CP=zeros(np,1);
+CS=zeros(np,1);
+wCP=zeros(np,1);
+wCS=zeros(np,1);
 matR=zeros(np,np);
-dir=ones(np,1)*[0 0 1];
+dir=ones(np,1)*[1 0 0];
+links=zeros(3*nf,7);
+count_l=0;
 % we create the basis
-n_psi=normalize_rows_3D(cross(normals,dir,2));
-n_sss=cross(n_psi,n_sss,2);
+n_psi=normalize_rows_3D(cross(normsP,dir,2));
+n_sss=cross(n_psi,normsP,2);
 
-CP=zeros(nf,3);
-CS=zeros(nf,3);
 % Now we need to compute curvatures !
 % Marginal gain
 A=zeros(1,3);
 B=zeros(1,3);
-C=zeros(1,3);
-dir=zeros(1,3);
-pos=zeros(1,3);
 
 gradN=zeros(3,3);
 NP=zeros(3,1);
 NS=zeros(3,1);
+C=zeros(3,1);
 for f=1:nf
-	iA=face(f,1);
-	iB=face(f,2);
-	iC=face(f,3);
-	A(:)=points(iA,:);
-	B(:)=points(iB,:);
-	C(:)=points(iC,:);
-	NP=
-	%% 
-	gradN(:,:)=surface_grad(A,B,normsP(iA,:),normsP(iB,:));
-	C_p=gradN(n_psi(iA,:)+n_psi(iB,:))'/2.0;
-	C_p=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+	%iA=face(f,1);
+	%iB=face(f,2);
+	%iC=face(f,3);
+	%A(:)=points(iA,:);
+	%B(:)=points(iB,:);
+	%C(:)=points(iC,:);
+	%NP=n_psi(iA,:)'+n_psi(iB,:)'+n_psi(iC,:)';
+	%NS=n_sss(iA,:)'+n_sss(iB,:)'+n_sss(iC,:)';
 	
-	dir(:)=cross((B-A),(C-A));
-	surf=surf+norm(dir);
-	pos(:)=(A+B+C);
-	% This is so freacking cool !!!
-	vol=vol+abs(dot(pos,dir));
+	% Link A to B
+	for i=1:3
+		if i==1
+			iA=faces(f,1);
+			iB=faces(f,2);
+		elseif i==2
+			iA=faces(f,1);
+			iB=faces(f,3);
+		elseif i==3
+			iA=faces(f,2);
+			iB=faces(f,3);
+		end
+		A(:)=points(iA,:);
+		B(:)=points(iB,:);
+		gradN(:,:)=surface_grad(A,B,normsP(iA,:),normsP(iB,:));
+		NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+		NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
+        % Weighted average of curvatures
+		CP(iA)=CP(iA)+dot(gradN*NP,NP)*(dot(NP,B-A)^2);
+		CS(iA)=CS(iA)+dot(gradN*NS,NS)*(dot(NS,B-A)^2);
+        CP(iB)=CP(iB)+dot(gradN*NP,NP)*(dot(NP,B-A)^2);
+		CS(iB)=CS(iB)+dot(gradN*NS,NS)*(dot(NS,B-A)^2);
+        wCP(iA)=wCP(iA)+(dot(NP,B-A)^2);
+        wCP(iB)=wCP(iB)+(dot(NP,B-A)^2);
+        wCS(iA)=wCS(iA)+(dot(NS,B-A)^2);
+        wCS(iB)=wCS(iB)+(dot(NS,B-A)^2);
+		%Ss=1.0/(2.0*Cp);
+		%Sp=(1.0-Cs*Ss)/Cp;
+		%matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
+		%CP(iA)=Cp;
+		%CS(iA)=Cs;
+		
+	end
 end
+CP=CP./wCP;
+CS=CS./wCS;
+
+for f=1:nf
+	%iA=face(f,1);
+	%iB=face(f,2);
+	%iC=face(f,3);
+	%A(:)=points(iA,:);
+	%B(:)=points(iB,:);
+	%C(:)=points(iC,:);
+	%NP=n_psi(iA,:)'+n_psi(iB,:)'+n_psi(iC,:)';
+	%NS=n_sss(iA,:)'+n_sss(iB,:)'+n_sss(iC,:)';
 	
+	% Link A to B
+	for i=1:3
+		if i==1
+			iA=faces(f,1);
+			iB=faces(f,2);
+		elseif i==2
+			iA=faces(f,1);
+			iB=faces(f,3);
+		elseif i==3
+			iA=faces(f,2);
+			iB=faces(f,3);
+		end
+		A(:)=points(iA,:);
+		B(:)=points(iB,:);
+        NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+		NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
+        Ss=1.0/(CP(iA)+CP(iB));
+		Sp=2.0*(1.0-0.5*(CS(iA)+CS(iB))*Ss)/(CP(iA)+CP(iB));
+        if matR(iA,iB)==0 && matR(iB,iA)==0
+            matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
+            matR(iB,iA)=matR(iA,iB);
+            count_l=count_l+1;
+            %size([A(:)',B(:)',matR(iA,iB)])
+            links(count_l,:)=[A(:)',B(:)',matR(iA,iB)];
+        end
+    end
+end
+
+if 0
+    figure
+    hold all
+    scatter3(points(1:300,1),points(1:300,2),points(1:300,3),'k')
+    for n=1:300
+        plot3([points(n,1) points(n,1)-5*normsP(n,1)],[points(n,2) points(n,2)-5*normsP(n,2)],[points(n,3) points(n,3)-5*normsP(n,3)],'k');
+        plot3([points(n,1) points(n,1)-5*n_psi(n,1)],[points(n,2) points(n,2)-5*n_psi(n,2)],[points(n,3) points(n,3)-5*n_psi(n,3)],'r');
+        plot3([points(n,1) points(n,1)-5*n_sss(n,1)],[points(n,2) points(n,2)-5*n_sss(n,2)],[points(n,3) points(n,3)-5*n_sss(n,3)],'g');
+    end	
+end
 
 end
 
@@ -155,7 +173,7 @@ function dNdAB=surface_grad(A,B,nA,nB)
 dNdAB=(1./(B-A)')*(nB-nA);
 end
 
-function [normsP,normF]=get_normals(points,faces,np,nf)
+function [normsP,normsF]=get_normals(points,faces,np,nf)
     %nf=size(face,1);
     %surf=0;
 	%vol=0;
@@ -173,11 +191,12 @@ function [normsP,normF]=get_normals(points,faces,np,nf)
         %C(:)=points(faces(f,3),:);
         %dir(:)=cross((B-A),(C-A));
 		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
-		normsP(faces(f),:)=normsP(faces(f),:)+col3*dir;
+        
+		normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
 		normsF(f,:)=dir;
     end
-    normsP(:)=normalize_rows_3D(normsF);
-	normsF(:)=normalize_rows_3D(normsP);
+    normsP(:,:)=normalize_rows_3D(normsP);
+	normsF(:,:)=normalize_rows_3D(normsF);
 end
 
 
