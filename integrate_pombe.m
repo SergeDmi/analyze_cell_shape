@@ -1,4 +1,4 @@
-function [ matR,Cp,Cs,links] = integrate_pombe( pombe,options)
+function [ matR,Cp,Cs,links,norms,ono] = integrate_pombe( pombe,options)
 %analyze_pombe analyzes the shape of pombe cells
 %   Analyzes a pombe segmentation
 %   Nothing much for now
@@ -34,7 +34,7 @@ norms=get_normals(points,faces,np,nf);
 % forces
 Fpts=zeros(np,3);
 % Interaction matrix
-[matR,Cp,Cs,links]=create_interaction_matrix(points,norms,faces);
+[matR,Cp,Cs,links,norms,ono]=create_interaction_matrix(points,norms,faces);
 
 
 end
@@ -44,7 +44,7 @@ function [M]=normalize_rows_3D(M)
 M(:,:)=M./(sqrt(sum(M.^2,2))*[1 1 1]);
 end
 
-function [matR,CP,CS,links]=create_interaction_matrix(points,normsP,faces)
+function [matR,CP,CS,links,norms,ono]=create_interaction_matrix(points,normsP,faces)
 % initiation
 np=size(points,1);
 nf=size(faces,1);
@@ -68,7 +68,9 @@ B=zeros(1,3);
 gradN=zeros(3,3);
 NP=zeros(3,1);
 NS=zeros(3,1);
-C=zeros(3,1);
+
+norms=zeros(3*nf,1);
+ono=zeros(3*nf,1);
 for f=1:nf
 	%iA=face(f,1);
 	%iB=face(f,2);
@@ -150,9 +152,15 @@ for f=1:nf
             count_l=count_l+1;
             %size([A(:)',B(:)',matR(iA,iB)])
             links(count_l,:)=[A(:)',B(:)',matR(iA,iB)];
+			norms(count_l)=norm(B-A);
+			ono(count_l)=(dot(B-A,NP)/norms(count_l)).^2;
         end
     end
 end
+
+links=links(1:count_l,:);
+ono=ono(1:count_l,:);
+norms=norms(1:count_l,:);
 
 if 0
     figure
