@@ -69,9 +69,10 @@ Nexp=count;
 for n=1:Nexp
 	experiments(n).pre_pombe=import_ply(experiments(n).prename);
 	experiments(n).post_pombe=import_ply(experiments(n).postname);
-	experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
-	experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
-	disp([num2str(n) '/' num2str(Nexp)]);
+    % we shouldn't do analysis here !
+	%experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
+	%experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
+	%disp([num2str(n) '/' num2str(Nexp)]);
 end
 
 %res=summary_experiments(experiments);
