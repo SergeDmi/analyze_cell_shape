@@ -1,4 +1,4 @@
-function [ matR,Cp,Cs,links,norms,ono] = integrate_pombe( pombe,options)
+function [ points,matR,Cp,Cs,links,norms,ono] = integrate_pombe( pombe,options)
 %analyze_pombe analyzes the shape of pombe cells
 %   Analyzes a pombe segmentation
 %   Nothing much for now
@@ -36,6 +36,48 @@ Fpts=zeros(np,3);
 % Interaction matrix
 [matR,Cp,Cs,links,norms,ono]=create_interaction_matrix(points,norms,faces);
 
+KR=zeros(3*np,3*np);
+MR=zeros(3*np,3*np);
+MPP=zeros(3*np,3*np);
+DP=zeros(3*np,3*np);
+DP2=zeros(3*np,3*np);
+FDP=zeros(3*np,3*np);
+PR=zeros(3*np,1);
+NDP=zeros(3*np,3*np);
+DEF=ones(3*np,3*np);
+NR=zeros(3*np,1);
+COL=ones(3*np,1);
+ROW=ones(1,3*np);
+I=eye(3);
+t=0;
+for i=0:2
+	MR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
+	if i==1
+		KR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
+	end
+end
+
+PR(:)=reshape(points',[3*np,1]);
+OR=MR>0;
+KR(:)=KR>0;
+DEF=DEF-OR;
+
+dt=0.01;
+P=1.0;
+L0=3;
+Tend=1;
+%% To do for all times
+while t<Tend
+	t=t+dt
+	NR(:)=reshape(get_normals(points,faces,np,nf)',[3*np,1]);
+	MPP(:,:)=OR.*(PR*ROW);
+	DP(:,:)=transpose(MPP)-MPP;
+	DP2(:,:)=DP.^2;
+	NDP(:,:)=DEF+conv2(sqrt(conv2(DP2,I,'same').*KR),I,'same');
+	FDP(:,:)=(DP-L0*DP./NDP);
+	PR(:)=PR(:)+dt*(sum(FDP,2)+NR*P);
+	points(:,:)=reshape(PR,[3,np])';
+end
 
 end
 
@@ -147,13 +189,15 @@ for f=1:nf
         Ss=1.0/(CP(iA)+CP(iB));
 		Sp=2.0*(1.0-0.5*(CS(iA)+CS(iB))*Ss)/(CP(iA)+CP(iB));
         if matR(iA,iB)==0 && matR(iB,iA)==0
-            matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
-            matR(iB,iA)=matR(iA,iB);
+            %matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
+            %matR(iB,iA)=matR(iA,iB);
             count_l=count_l+1;
             %size([A(:)',B(:)',matR(iA,iB)])
-            links(count_l,:)=[A(:)',B(:)',matR(iA,iB)];
-			norms(count_l)=norm(B-A);
-			ono(count_l)=(dot(B-A,NP)/norms(count_l)).^2;
+            %links(count_l,:)=[A(:)',B(:)',matR(iA,iB)];
+			%norms(count_l)=norm(B-A);
+			%ono(count_l)=(dot(B-A,NP)/norms(count_l)).^2;
+			matR(iA,iB)=1;
+            matR(iB,iA)=1;
         end
     end
 end
