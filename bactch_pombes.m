@@ -7,7 +7,8 @@
 % Let's go !
 
 %% Ok now we have to declare the root and folders
-root='pombe_3D_files/';
+%root='pombe_3D_files/';
+root='/home/dmitrief/Sync/ownCloud/work/yeast_wall/pombe_3D_files/';
 folders={'180214/','180220/','180222/'};
 [experiments]=load_exps(root,folders);
 

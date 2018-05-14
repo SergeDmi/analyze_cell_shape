@@ -1,6 +1,11 @@
-function [ results,experiments ] = summary_experiments( experiments )
-%UNTITLED Summary of this function goes here
+function [ results,experiments ] = summary_experiments( experiments,options )
+% runs over experiments 
 %   Detailed explanation goes here
+
+
+if nargin<2
+    options=pombe_default_options();
+end
 
 Nexp=numel(experiments);
 aspect=zeros(Nexp,2);
@@ -16,29 +21,38 @@ change_pers=[];
 pre_ares=[];
 change_ares=[];
 for n=1:Nexp
-    experiments(n)=align_experiments(experiments(n));
-    %experiments(n)=compare_pombes(experiments(n));
-    experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
-	experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
-    
-    experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
-	experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
-    
-    res=compare_pombes(experiments(n));
-	surface(n,1)=experiments(n).pre_analysis.surface;
-	volume(n,1)=experiments(n).pre_analysis.volume;
-	aspect(n,1)=experiments(n).pre_analysis.central_circularity;
-	length(n,1)=experiments(n).pre_analysis.length;
+	experiments(n)=align_experiments(experiments(n));
 	
-	surface(n,2)=experiments(n).post_analysis.surface;
-	volume(n,2)=experiments(n).post_analysis.volume;
-	aspect(n,2)=experiments(n).post_analysis.central_circularity;
-	length(n,2)=experiments(n).post_analysis.length;	
-    
-    pre_pers=[pre_pers res.pre_per];
-    change_pers=[change_pers res.post_per-res.pre_per];
-    pre_ares=[pre_ares res.pre_area];
-    change_ares=[change_ares res.post_area-res.pre_area];
+	if ~options.check_pairs
+		checked=1;
+	else
+		checked=check_pair(experiments(n));
+	end
+	
+	if checked>0
+		%experiments(n)=compare_pombes(experiments(n));
+		experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
+		experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
+		
+		experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
+		experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
+		
+		res=compare_pombes(experiments(n));
+		surface(n,1)=experiments(n).pre_analysis.surface;
+		volume(n,1)=experiments(n).pre_analysis.volume;
+		aspect(n,1)=experiments(n).pre_analysis.central_circularity;
+		length(n,1)=experiments(n).pre_analysis.length;
+		
+		surface(n,2)=experiments(n).post_analysis.surface;
+		volume(n,2)=experiments(n).post_analysis.volume;
+		aspect(n,2)=experiments(n).post_analysis.central_circularity;
+		length(n,2)=experiments(n).post_analysis.length;
+		
+		pre_pers=[pre_pers res.pre_per];
+		change_pers=[change_pers res.post_per-res.pre_per];
+		pre_ares=[pre_ares res.pre_area];
+		change_ares=[change_ares res.post_area-res.pre_area];
+	end
 end
 
 

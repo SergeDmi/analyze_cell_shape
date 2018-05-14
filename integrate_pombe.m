@@ -73,6 +73,7 @@ while t<Tend
 	MPP(:,:)=OR.*(PR*ROW);
 	DP(:,:)=transpose(MPP)-MPP;
 	DP2(:,:)=DP.^2;
+	% There should be quicker way to do ! conv2 is likely very slow...
 	NDP(:,:)=DEF+conv2(sqrt(conv2(DP2,I,'same').*KR),I,'same');
 	FDP(:,:)=(DP-L0*DP./NDP);
 	PR(:)=PR(:)+dt*(sum(FDP,2)+NR*P);

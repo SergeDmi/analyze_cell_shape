@@ -12,7 +12,6 @@ pp2=pp2-ones(size(pp2,1),1)*c2;
 
 %% PCA to find the main axis of pre points
 [co1,p1]=princom(pp1);
-% Rotation of post according to PCA if 1
 p2=pp2*co1;
 
 %% Getting away with murder
