@@ -23,6 +23,7 @@ if options.centering > 0
     center=mean(points,1);
     points=points-ones(np,1)*center;
     [~,points,~]=princom(points);
+	disp('Auto centering and aligning cell')
 end
 %np=size(points,1);
 %center=mean(points,1);

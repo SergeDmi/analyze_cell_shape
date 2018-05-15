@@ -53,6 +53,7 @@ hold all
 hImage=scatter3(p2(:,1),p2(:,2)+offset,p2(:,3),5,'r');
 title(['...' experiment(1).prename(end-20:end)], 'Interpreter', 'none');
 axis equal
+view([1,-0.7,-0.8])
 %rotate3d on
 
 %% Here we wait for user action
