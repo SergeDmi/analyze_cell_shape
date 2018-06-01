@@ -5,7 +5,11 @@ function [pombe] = import_ply(filename)
 %                         faces (triangles of point indexes)
 
 [d,~] = plyread(filename);
-ff = d.face.vertex_index;
+if isfield(d.face,'vertex_index')
+	ff = d.face.vertex_index;
+elseif isfield(d.face,'vertex_indices')
+	ff = d.face.vertex_indices;
+end
 nf = length(ff);
 pombe.faces=zeros(nf,3);
 for i=1:nf

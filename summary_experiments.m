@@ -20,6 +20,9 @@ pre_pers=[];
 change_pers=[];
 pre_ares=[];
 change_ares=[];
+pre_circ=[];
+change_circ=[];
+dist_circ=[];
 for n=1:Nexp
 	experiments(n)=align_experiments(experiments(n));
 	
@@ -52,6 +55,10 @@ for n=1:Nexp
 		change_pers=[change_pers res.post_per-res.pre_per];
 		pre_ares=[pre_ares res.pre_area];
 		change_ares=[change_ares res.post_area-res.pre_area];
+		
+		pre_circ=[pre_circ res.pre_circ];
+		change_circ=[change_circ res.post_circ-res.pre_circ];
+		dist_circ=[dist_circ res.dist_circ];
 	end
 end
 
@@ -62,6 +69,9 @@ results.change_pers=change_pers;
 results.pre_ares=pre_ares;
 results.change_ares=change_ares;
 
+results.pre_circ=pre_circ;
+results.change_circ=change_circ;
+results.dist_circ=dist_circ;
 
 results.surface=surface;
 results.volume=volume;

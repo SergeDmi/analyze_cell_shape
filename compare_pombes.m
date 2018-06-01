@@ -25,6 +25,9 @@ res.post_per=spline(post.res.pos,post.res.pers,hh);
 res.pre_area=spline(pre.res.pos,pre.res.ares,hh);
 res.post_area=spline(post.res.pos,post.res.ares,hh);
 
+res.pre_circ=spline(pre.res.pos,pre.res.circ,hh);
+res.post_circ=spline(post.res.pos,post.res.circ,hh);
+res.dist_circ=spline(pre.res.pos,pre.res.dist,hh);
 
 if options.verbose>0
    figure

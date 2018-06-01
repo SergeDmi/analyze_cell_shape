@@ -6,6 +6,8 @@ function [ points,matR,Cp,Cs,links,norms,ono] = integrate_pombe( pombe,options)
 % Serge Dmitrieff, IJM 2018
 % www.biophysics.fr
 
+
+%% Checking inputs
 if nargin<2
     options=pombe_default_options();
 end
@@ -24,154 +26,49 @@ points=points-ones(np,1)*center;
 [coefs,points,~]=princom(points);
 normals=normals*coefs;
 
-% Curvature along s
-Cs=zeros(np,1);
-% Curvature along phi
-Cp=zeros(np,1);
-
 %recomputing normals
-norms=get_normals(points,faces,np,nf);
+[norms,surfs]=get_normals_surfs(points,faces,np,nf);
 % forces
 Fpts=zeros(np,3);
 % Interaction matrix
-[matR,Cp,Cs,links,norms,ono]=create_interaction_matrix(points,norms,faces);
+[matR]=create_interaction_matrix(points,norms,faces);
 
-KR=zeros(3*np,3*np);
-MR=zeros(3*np,3*np);
-MPP=zeros(3*np,3*np);
-DP=zeros(3*np,3*np);
-DP2=zeros(3*np,3*np);
-FDP=zeros(3*np,3*np);
-PR=zeros(3*np,1);
-NDP=zeros(3*np,3*np);
-DEF=ones(3*np,3*np);
-NR=zeros(3*np,1);
-COL=ones(3*np,1);
-ROW=ones(1,3*np);
-I=eye(3);
-t=0;
-for i=0:2
-	MR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
-	if i==1
-		KR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
-	end
-end
 
-PR(:)=reshape(points',[3*np,1]);
-OR=MR>0;
-KR(:)=KR>0;
-DEF=DEF-OR;
 
-dt=0.01;
-P=1.0;
-L0=3;
-Tend=1;
-%% To do for all times
-while t<Tend
-	t=t+dt
-	NR(:)=reshape(get_normals(points,faces,np,nf)',[3*np,1]);
-	MPP(:,:)=OR.*(PR*ROW);
-	DP(:,:)=transpose(MPP)-MPP;
-	DP2(:,:)=DP.^2;
-	% There should be quicker way to do ! conv2 is likely very slow...
-	NDP(:,:)=DEF+conv2(sqrt(conv2(DP2,I,'same').*KR),I,'same');
-	FDP(:,:)=(DP-L0*DP./NDP);
-	PR(:)=PR(:)+dt*(sum(FDP,2)+NR*P);
-	points(:,:)=reshape(PR,[3,np])';
-end
+
+
+
 
 end
 
-
-function [M]=normalize_rows_3D(M)
-M(:,:)=M./(sqrt(sum(M.^2,2))*[1 1 1]);
+%% Normalize a column of row vectors
+function [M,w]=normalize_rows_3D(M)
+w=sqrt(sum(M.^2,2));
+M(:,:)=M./(w*[1 1 1]);
 end
 
-function [matR,CP,CS,links,norms,ono]=create_interaction_matrix(points,normsP,faces)
+%% Create the interaction matrix
+function [matR]=create_interaction_matrix(points,normsP,faces,params)
 % initiation
 np=size(points,1);
 nf=size(faces,1);
-CP=zeros(np,1);
-CS=zeros(np,1);
-wCP=zeros(np,1);
-wCS=zeros(np,1);
 matR=zeros(np,np);
 dir=ones(np,1)*[1 0 0];
-links=zeros(3*nf,7);
-count_l=0;
 % we create the basis
 n_psi=normalize_rows_3D(cross(normsP,dir,2));
-n_sss=cross(n_psi,normsP,2);
-
-% Now we need to compute curvatures !
+%n_sss=cross(n_psi,normsP,2);
 % Marginal gain
 A=zeros(1,3);
 B=zeros(1,3);
-
-gradN=zeros(3,3);
 NP=zeros(3,1);
 NS=zeros(3,1);
 
-norms=zeros(3*nf,1);
-ono=zeros(3*nf,1);
-for f=1:nf
-	%iA=face(f,1);
-	%iB=face(f,2);
-	%iC=face(f,3);
-	%A(:)=points(iA,:);
-	%B(:)=points(iB,:);
-	%C(:)=points(iC,:);
-	%NP=n_psi(iA,:)'+n_psi(iB,:)'+n_psi(iC,:)';
-	%NS=n_sss(iA,:)'+n_sss(iB,:)'+n_sss(iC,:)';
-	
-	% Link A to B
-	for i=1:3
-		if i==1
-			iA=faces(f,1);
-			iB=faces(f,2);
-		elseif i==2
-			iA=faces(f,1);
-			iB=faces(f,3);
-		elseif i==3
-			iA=faces(f,2);
-			iB=faces(f,3);
-		end
-		A(:)=points(iA,:);
-		B(:)=points(iB,:);
-		gradN(:,:)=surface_grad(A,B,normsP(iA,:),normsP(iB,:));
-		NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
-		NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
-        % Weighted average of curvatures
-		CP(iA)=CP(iA)+dot(gradN*NP,NP)*(dot(NP,B-A)^2);
-		CS(iA)=CS(iA)+dot(gradN*NS,NS)*(dot(NS,B-A)^2);
-        CP(iB)=CP(iB)+dot(gradN*NP,NP)*(dot(NP,B-A)^2);
-		CS(iB)=CS(iB)+dot(gradN*NS,NS)*(dot(NS,B-A)^2);
-        wCP(iA)=wCP(iA)+(dot(NP,B-A)^2);
-        wCP(iB)=wCP(iB)+(dot(NP,B-A)^2);
-        wCS(iA)=wCS(iA)+(dot(NS,B-A)^2);
-        wCS(iB)=wCS(iB)+(dot(NS,B-A)^2);
-		%Ss=1.0/(2.0*Cp);
-		%Sp=(1.0-Cs*Ss)/Cp;
-		%matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
-		%CP(iA)=Cp;
-		%CS(iA)=Cs;
-		
-	end
-end
-CP=CP./wCP;
-CS=CS./wCS;
+
+ 
+
 
 for f=1:nf
-	%iA=face(f,1);
-	%iB=face(f,2);
-	%iC=face(f,3);
-	%A(:)=points(iA,:);
-	%B(:)=points(iB,:);
-	%C(:)=points(iC,:);
-	%NP=n_psi(iA,:)'+n_psi(iB,:)'+n_psi(iC,:)';
-	%NS=n_sss(iA,:)'+n_sss(iB,:)'+n_sss(iC,:)';
 	
-	% Link A to B
 	for i=1:3
 		if i==1
 			iA=faces(f,1);
@@ -183,76 +80,63 @@ for f=1:nf
 			iA=faces(f,2);
 			iB=faces(f,3);
 		end
-		A(:)=points(iA,:);
-		B(:)=points(iB,:);
-        NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
-		NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
-        Ss=1.0/(CP(iA)+CP(iB));
-		Sp=2.0*(1.0-0.5*(CS(iA)+CS(iB))*Ss)/(CP(iA)+CP(iB));
+		
         if matR(iA,iB)==0 && matR(iB,iA)==0
-            %matR(iA,iB)=(Ss*dot(B-A,NS)+Sp*dot(B-A,NP))/norm(B-A);
-            %matR(iB,iA)=matR(iA,iB);
-            count_l=count_l+1;
-            %size([A(:)',B(:)',matR(iA,iB)])
-            %links(count_l,:)=[A(:)',B(:)',matR(iA,iB)];
-			%norms(count_l)=norm(B-A);
-			%ono(count_l)=(dot(B-A,NP)/norms(count_l)).^2;
-			matR(iA,iB)=1;
-            matR(iB,iA)=1;
+           matA(iA,iB)=create_link(iA,iB,points,n_psi,params);
         end
     end
 end
 
-links=links(1:count_l,:);
-ono=ono(1:count_l,:);
-norms=norms(1:count_l,:);
-
-if 0
-    figure
-    hold all
-    scatter3(points(1:300,1),points(1:300,2),points(1:300,3),'k')
-    for n=1:300
-        plot3([points(n,1) points(n,1)-5*normsP(n,1)],[points(n,2) points(n,2)-5*normsP(n,2)],[points(n,3) points(n,3)-5*normsP(n,3)],'k');
-        plot3([points(n,1) points(n,1)-5*n_psi(n,1)],[points(n,2) points(n,2)-5*n_psi(n,2)],[points(n,3) points(n,3)-5*n_psi(n,3)],'r');
-        plot3([points(n,1) points(n,1)-5*n_sss(n,1)],[points(n,2) points(n,2)-5*n_sss(n,2)],[points(n,3) points(n,3)-5*n_sss(n,3)],'g');
-    end	
-end
 
 end
 
-function dNdAB=surface_grad(A,B,nA,nB)
-%invdir=1./(B-A);
-%dN=nB-nA;
-dNdAB=(1./(B-A)')*(nB-nA);
+function l0=create_link(iA,iB,points,n_psi,params)
+% Dummy
+BA(:)=points(iB,:)-points(iA,:);
+%B(:)=points(iB,:);
+NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
+
+l0=norm(BA)
+%NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
+
+
+        
 end
 
-function [normsP,normsF]=get_normals(points,faces,np,nf)
-    %nf=size(face,1);
-    %surf=0;
-	%vol=0;
-    % Marginal gain
+function [normsP]=get_normals(points,faces,np,nf)
 	normsP=zeros(np,3);
 	normsF=zeros(np,3);
-    %A=zeros(1,3);
-    %B=zeros(1,3);
-    %C=zeros(1,3);
     dir=zeros(1,3);
 	col3=ones(3,1);
     for f=1:nf
-        %A(:)=points(faces(f,1),:);
-        %B(:)=points(faces(f,2),:);
-        %C(:)=points(faces(f,3),:);
-        %dir(:)=cross((B-A),(C-A));
 		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
-        
-		normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
-		normsF(f,:)=dir;
+        normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
     end
     normsP(:,:)=normalize_rows_3D(normsP);
-	normsF(:,:)=normalize_rows_3D(normsF);
+	
 end
 
 
+function [normsP,surfP]=get_normals_surf(points,faces,np,nf)
+    % Marginal gain
+	
+	normsP=zeros(np,3);
+	cntfP=zeros(np,1);
+    dir=zeros(1,3);
+	col3=ones(3,1);
+
+	
+    for f=1:nf
+		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
+      
+		normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
+		cntfP(faces(f,:))=cntfP(faces(f,:))+1;
+		
+    end
+    [normsP(:,:),surfP]=normalize_rows_3D(normsP);
+	surfP(:)=surfP./cntfP;
+	
+end
 
 function [surf]=get_surface_slice(per)
     segs=diff(per,1,2);
@@ -307,3 +191,76 @@ function [dist]=mean_dist(points,face)
     dist=dist/np;
 end
 
+function dummy_function()
+KR=(zeros(3*np,3*np));
+MR=(zeros(3*np,3*np));
+MPP=(zeros(3*np,3*np));
+DP=(zeros(3*np,3*np));
+DP2=(zeros(3*np,3*np));
+FDP=(zeros(3*np,3*np));
+PR=zeros(3*np,1);
+NDP=(zeros(3*np,3*np));
+
+DEF=ones(3*np,3*np);
+NR=zeros(3*np,1);
+COL=ones(3*np,1);
+ROW=ones(1,3*np);
+I=eye(3);
+t=0;
+ixes=reshape(1:(np*np*9),3*np,3*np);
+for i=0:2
+	MR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
+	KK=zeros(3*np,3*np);
+	KK((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:)>0;
+	if i==0
+		allX=ixes(logical(KK));
+	elseif i==1
+		%KR((1:np)*3+i-2,(1:np)*3+i-2)=matR(:,:);
+		KR(:,:)=KK(:,:);
+		allY=ixes(logical(KK));
+	elseif i==2
+		allZ=ixes(logical(KK));
+	end
+end
+
+PR(:)=reshape(points',[3*np,1]);
+OR=MR>0;
+KR(:)=KR>0;
+
+% 
+
+DEF=DEF-OR;
+
+dt=0.01;
+P=1.0;
+L0=3;
+Tend=0;
+Tnorm=10*dt;
+nextN=0;
+%% To do for all times
+while t<Tend
+	t=t+dt
+	nextN=nextN-dt;
+	if nextN<0
+		points(:,:)=reshape(PR,[3,np])';
+		disp('finding normals')
+		tic
+		NR(:)=reshape(get_normals(points,faces,np,nf)',[3*np,1]);
+		toc
+		nextN=Tnorm;
+	end
+	disp('main loop')
+	tic
+	MPP(:,:)=OR.*(PR*ROW);
+	DP(:,:)=transpose(MPP)-MPP;
+	DP2(:,:)=DP.^2;
+	NDP(:,:)=DEF;
+	NDP(allY)=DP2(allY)+DP2(allX)+DP2(allZ);
+	NDP(allX)=NDP(allY);
+	NDP(allZ)=NDP(allY);
+	FDP(:,:)=(DP-L0*DP./NDP);
+	PR(:)=PR(:)+dt*(sum(FDP,2)+NR*P);
+	toc
+	
+end
+end

@@ -6,6 +6,6 @@ function [ options ] = pombe_default_options()
     options.centering=0;
     options.spline.dt=2*pi/100;
     options.spline.npp=8;
-	options.check_pairs=1;
+	options.check_pairs=0;
 end
 
