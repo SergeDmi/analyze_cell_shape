@@ -18,7 +18,7 @@ p2=experiment.post_pombe.points;
 pre.res=experiment.pre_analysis.slices;
 post.res=experiment.post_analysis.slices;
 
-hh=(min([pre.res.pos;post.res.pos])):5:(max([pre.res.pos;post.res.pos]));
+hh=(min([pre.res.pos;post.res.pos])):options.spline_dh:(max([pre.res.pos;post.res.pos]));
 res.pre_per=spline(pre.res.pos,pre.res.pers,hh);
 res.post_per=spline(post.res.pos,post.res.pers,hh);
 
@@ -38,7 +38,7 @@ if options.verbose>0
     scatter(post.res.pos,post.res.pers,'r')
     plot(hh,res.post_per,'r')
     axis([min([pre.res.pos;post.res.pos]) max([pre.res.pos;post.res.pos]) 0 max([pre.res.pers;post.res.pers])]);
-    ylabel('perimeter')  
+    ylabel('perimeter')
     subplot(3,2,2)
     hold all
     scatter(pre.res.pos,pre.res.ares,'k')

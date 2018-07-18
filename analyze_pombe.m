@@ -8,7 +8,7 @@ function [ analysis,points] = analyze_pombe( pombe,options)
 
 if nargin<2
     options=pombe_default_options();
-    if isfield(options,"pixel_size")
+    if isfield(options,'pixel_size')
       pixel_size=options.pixel_size;
     else
       disp('Warning : could not find pixel_size in options');
@@ -70,10 +70,28 @@ analysis.curv_energy=sum(exclude_extremes((analysis.mean_curv.^2).*surfP,3));
 
 
 %% Now that it's turned, we can compute one or a couple thin slices
-analysis.slices=compute_perimeters(points,options);
-%h=options.thickness_central/2.0;
-ix=round(analysis.slices.nslice/2);
-latYZ=analysis.slices.latYZ(ix,:);
+if (options.do_slice_analysis)
+  analysis.slices=compute_perimeters(points,options);
+  %h=options.thickness_central/2.0;
+  ix=round(analysis.slices.nslice/2);
+  latYZ=analysis.slices.latYZ(ix,:);
+  sliceYZ=analysis.slices.per(ix).points(:,2:3);
+else
+  h=options.thickness_central/2.0;
+  gl=logical((points(:,1)<h).*(points(:,1)>-h));
+  slice=points(gl,:);
+  [~,sliceYZ,latYZ]=princom(slice(:,2:3));
+end
+
+per=smooth_periodic(sliceYZ,options);
+per=[per,per(:,end)];
+analysis.central_perimeter=seglength(per);
+
+%analysis.slice_area=get_surface_slice(per);
+analysis.central_area=get_surface_slice(per);
+
+% We do a PCA of the slice on the YZ plane
+
 %gl=logical((points(:,1)<h).*(points(:,1)>-h));
 %slice=points(gl,:);
 % We do a PCA of the slice on the YZ plane
@@ -83,7 +101,7 @@ latYZ=analysis.slices.latYZ(ix,:);
 % and then sqrt of ratio -> maximum sensitivity !
 analysis.central_circularity=1-sqrt(abs(latYZ(1)-latYZ(2))/sum(latYZ));
 %analysis.total_circularity=1-sqrt(abs(latXYZ(3)-latXYZ(3))/sum(latXYZ(2:3)));
-analysis.circularity_fiji=1-(sqrt(1-(4*pi*(get_surface_slice(per)/(seglength(per)).^2))));
+analysis.circularity_fiji=1-(sqrt(1-(4*pi*(analysis.central_area/(analysis.central_perimeter).^2))));
 analysis.central_r1=sqrt(latYZ(1));
 analysis.central_r2=sqrt(latYZ(2));
 analysis.total_l1=max(points(:,1))-min(points(:,1));
@@ -92,8 +110,6 @@ analysis.pt_mean_dist=mean_dist(points,faces);
 %per= smooth_periodic( sliceYZ,options);
 %analysis.central_perimeter=seglength(per);
 %per=[per,per(:,end)];
-analysis.central_perimeter=analysis.slices.pers(ix);
-analysis.central_area=analysis.slices.ares(ix);
 
 analysis.length=max(points(:,1))-min(points(:,1));
 
