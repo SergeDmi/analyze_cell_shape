@@ -16,8 +16,8 @@ scale=1.1;
 val=0;
 h=options.thickness_central;
 %% Here we plot
-p1=experiment.pre_pombe.points;
-p2=experiment.post_pombe.points;
+p1=experiment.pre_pombe.points*options.pixel_size;
+p2=experiment.post_pombe.points*options.pixel_size;
 offset=(max(p1(:,2))-min(p2(:,2)))*1.3;
 pp=[p1;p2];
 
@@ -57,7 +57,7 @@ view([1,-0.7,-0.8])
 %rotate3d on
 
 %% Here we wait for user action
-	
+
 hFig   = gcf;
 set(gcf, 'Position', [100, 100, 1000, 1000])
 set(hFig,  'KeyPressFcn',   {@callback_key_down});
@@ -69,7 +69,7 @@ set(hFig,  'DeleteFcn',     {@callback_quit});
 
 
 
-    function callback_key_down(hObject, eventData)        
+    function callback_key_down(hObject, eventData)
         %keyboard action
         T = [];
         if eventData.Character == ' '
@@ -80,8 +80,8 @@ set(hFig,  'DeleteFcn',     {@callback_quit});
         elseif eventData.Character == 'q'
             callback_quit();
         end
-        
-        
+
+
 	end
 
 
