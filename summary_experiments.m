@@ -7,6 +7,10 @@ if nargin<2
     options=pombe_default_options();
 end
 
+if options.check_pairs
+  disp('Manually checking experiments')
+  disp(' press [SPACE] to keep, [q] to discard')
+end
 Nexp=numel(experiments);
 aspect=zeros(Nexp,2);
 surface=zeros(Nexp,2);
