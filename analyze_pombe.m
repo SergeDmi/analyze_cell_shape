@@ -8,9 +8,15 @@ function [ analysis,points] = analyze_pombe( pombe,options)
 
 if nargin<2
     options=pombe_default_options();
+    if isfield(options,"pixel_size")
+      pixel_size=options.pixel_size;
+    else
+      disp('Warning : could not find pixel_size in options');
+      pixel_size=1;
+    end
 end
 
-points=pombe.points;
+points=options.pixel_size*pombe.points;
 normals=pombe.normals;
 faces=pombe.faces;
 
@@ -23,7 +29,7 @@ if options.centering > 0
     center=mean(points,1);
     points=points-ones(np,1)*center;
     [~,points,~]=princom(points);
-	disp('Auto centering and aligning cell')
+	   disp('Auto centering and aligning cell')
 end
 %np=size(points,1);
 %center=mean(points,1);
@@ -44,6 +50,7 @@ end
 
 %% We can already compute surface area.
 [analysis.surface,analysis.volume]=get_surface_volume(points,faces);
+
 
 [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf);
 [CP,CS]=compute_curvatures(points,faces,normsP,np,nf);
@@ -76,7 +83,7 @@ latYZ=analysis.slices.latYZ(ix,:);
 % and then sqrt of ratio -> maximum sensitivity !
 analysis.central_circularity=1-sqrt(abs(latYZ(1)-latYZ(2))/sum(latYZ));
 %analysis.total_circularity=1-sqrt(abs(latXYZ(3)-latXYZ(3))/sum(latXYZ(2:3)));
-
+analysis.circularity_fiji=1-(sqrt(1-(4*pi*(get_surface_slice(per)/(seglength(per)).^2))));
 analysis.central_r1=sqrt(latYZ(1));
 analysis.central_r2=sqrt(latYZ(2));
 analysis.total_l1=max(points(:,1))-min(points(:,1));
@@ -159,7 +166,7 @@ function [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf)
     dir=zeros(1,3);
 	col3=ones(3,1);
 
-	
+
     for f=1:nf
         %A(:)=points(faces(f,1),:);
         %B(:)=points(faces(f,2),:);
@@ -174,18 +181,18 @@ function [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf)
 		cntfP(faces(f,:))=cntfP(faces(f,:))+1;
 		normsF(f,:)=dir;
 		cntfF(f)=cntfF(f)+1;
-		
-		
+
+
 		% Link A to B
-		
-		
+
+
     end
     [normsP(:,:),surfP]=normalize_rows_3D(normsP);
 	[normsF(:,:),surfF]=normalize_rows_3D(normsF);
 	surfP(:)=surfP./cntfP;
 	surfF(:)=surfF./cntfF;
-	
-	
+
+
 end
 
 function [CP,CS]=compute_curvatures(points,faces,normsP,np,nf)
@@ -224,7 +231,7 @@ for f=1:nf
 		NP(:)=(n_psi(iA,:)+n_psi(iB,:))'/2.0;
 		NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
 		% Weighted average of curvatures
-		
+
 		wp=(dot(NP,B-A)^2);
 		ws=(dot(NS,B-A)^2);
 		poins(iA).lCp=[poins(iA).lCp dot(gradN*NP,NP)];
@@ -235,8 +242,8 @@ for f=1:nf
 		poins(iA).wCs=[poins(iA).wCs ws];
 		poins(iB).wCp=[poins(iB).wCp wp];
 		poins(iB).wCs=[poins(iB).wCs ws];
-		
-		
+
+
 	end
 end
 
@@ -251,7 +258,7 @@ for i=1:np
 	wCp=poins(i).wCp(icp);
 	lCs=poins(i).lCs(icp);
 	wCs=poins(i).wCs(icp);
-	
+
 	[lCp,ix]=exclude_extremes(lCp,2);
 	wCp=wCp(ix);
 	[lCs,ix]=exclude_extremes(lCs,2);
@@ -284,7 +291,7 @@ function [surf,vol]=get_surface_volume(points,face)
         % This is so freacking cool !!!
         vol=vol+abs(dot(pos,dir));
     end
-    surf=surf/2; 
+    surf=surf/2;
     vol=vol/12.0;
 end
 
@@ -327,13 +334,13 @@ function [res]=compute_perimeters(points,options)
 		pos=xm+(i*h*2)-h;
         res.pos(i)=pos;
         res.dist(i)=min(abs(mp-pos),abs(Mp-pos));
-		
+
         gl=logical((points(:,1)<(pos+h)).*(points(:,1)>(pos-h)));
         slice=points(gl,:);
         [~,~,res.latYZ(i,:)]=princom(slice(:,2:3));
         %scatter3(slice(:,1),slice(:,2),slice(:,3))
         per= smooth_periodic( slice(:,2:3),options);
-		
+
         %
         per=[per,per(:,1)];
         res.circ(i)=1-sqrt(abs(res.latYZ(i,1)-res.latYZ(i,2))/sum(res.latYZ(i,:)));
