@@ -10,10 +10,14 @@ if nargin<3
 end
 norms=pombe.normals;
 
-
+if numel(np)==1
+	bli=1:np;
+else
+	bli=np;
+end
 figure
 hold all
-bli=1:np;
+
 scatter3(pts(bli,1),pts(bli,2),pts(bli,3))
 size([pts(bli,1) pts(bli,1)+dx*norms(bli,1)])
 %plot3([pts(bli,1) pts(bli,1)+dx*norms(bli,1)],[pts(bli,2) pts(bli,2)+dx*norms(bli,2)],[pts(bli,3) pts(bli,3)+dx*norms(bli,3)]);

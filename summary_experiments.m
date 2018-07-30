@@ -14,6 +14,8 @@ end
 Nexp=numel(experiments);
 aspect=zeros(Nexp,2);
 surface=zeros(Nexp,2);
+shape_perimeter=zeros(Nexp,2);
+shape_backbone=zeros(Nexp,2);
 volume=zeros(Nexp,2);
 length=zeros(Nexp,2);
 radius=zeros(Nexp,2);
@@ -28,7 +30,7 @@ pre_circ=[];
 change_circ=[];
 dist_circ=[];
 for n=1:Nexp
-	experiments(n)=align_experiments(experiments(n));
+	experiments(n)=align_experiments(experiments(n),options);
 
 	if ~options.check_pairs
 		checked=1;
@@ -41,19 +43,24 @@ for n=1:Nexp
 		experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
 		experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
 
-		experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
-		experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
+		%experiments(n).pre_analysis=analyze_pombe(experiments(n).pre_pombe);
+		%experiments(n).post_analysis=analyze_pombe(experiments(n).post_pombe);
 
 
 		surface(n,1)=experiments(n).pre_analysis.surface;
 		volume(n,1)=experiments(n).pre_analysis.volume;
 		aspect(n,1)=experiments(n).pre_analysis.central_circularity;
 		length(n,1)=experiments(n).pre_analysis.length;
+		shape_perimeter(n,1)=experiments(n).pre_analysis.perimeter_angular_deviation;
+		shape_backbone(n,1)=experiments(n).pre_analysis.backbone_angular_deviation;
 
 		surface(n,2)=experiments(n).post_analysis.surface;
 		volume(n,2)=experiments(n).post_analysis.volume;
 		aspect(n,2)=experiments(n).post_analysis.central_circularity;
 		length(n,2)=experiments(n).post_analysis.length;
+		shape_perimeter(n,2)=experiments(n).post_analysis.perimeter_angular_deviation;
+		shape_backbone(n,2)=experiments(n).post_analysis.backbone_angular_deviation;
+		
 
     if (options.do_slice_analysis )
       res=compare_pombes(experiments(n));
@@ -94,11 +101,17 @@ results.surface=surface;
 results.volume=volume;
 results.aspect=aspect;
 results.length=length;
+results.shape_perimeter=shape_perimeter;
+results.shape_backbone=shape_backbone;
+
+
 
 results.volume_change=(diff(volume,1,2));
 results.surface_change=(diff(surface,1,2));
 results.aspect_change=(diff(aspect,1,2));
 results.length_change=(diff(length,1,2));
+results.backbone_recovery=(shape_backbone(:,1)-shape_backbone(:,2))/shape_backbone(:,1);
+results.perimeter_recovery=(shape_perimeter(:,1)-shape_perimeter(:,2))/shape_perimeter(:,1);
 
 [~,nv]=min(results.volume_change);
 interest(nv)=true;

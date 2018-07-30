@@ -4,7 +4,7 @@ function [ PTS,T,Pts,Th,score,error,ruPTS] = smooth_periodic( pts,options)
 %   WW is a 1xnp vector containing the weights of each point
 %   dt is the step in theta we want to have
 %   npp is the number of data points per period we want to use to spline
-%   mode and geom determine the fitting procedure. 
+%   mode and geom determine the fitting procedure.
 %   default mode : spline
 %   default geometry : polar
 %
@@ -12,7 +12,7 @@ function [ PTS,T,Pts,Th,score,error,ruPTS] = smooth_periodic( pts,options)
 % PTS,T : fitted points and polar angle of the smoothed points
 % PTS are turned in a new reference frame
 % Pts,Th : points and polar angle of experimental points
-% score : out of planeness 
+% score : out of planeness
 % error : standard deviation between smoothed pts and exp pts
 %
 % Serge Dmitrieff, EMBL, 2015
@@ -20,14 +20,15 @@ function [ PTS,T,Pts,Th,score,error,ruPTS] = smooth_periodic( pts,options)
 
 if nargin<2
     options=pombe_default_options();
+    options=options.central.spline;
 end
 
 np=size(pts,1);
 Pts=zeros(3,np);
 Pts(1:2,:)=pts';
 W=ones(1,np);
-dt=options.spline.dt;
-npp=options.spline.npp;
+dt=options.dt;
+npp=options.npp;
 % --------------------------------------------------------------------
 %% Pre-processsing
 % --------------------------------------------------------------------
@@ -43,13 +44,13 @@ PtZ=cylpts(3,:);
 %% Reording the data by increasing angle ; Th is now our coordinate
 [Th(1,:),order]=sort(Th);
 W(1,:)=W(1,order);
-Nr=DPr(1,order); 
+Nr=DPr(1,order);
 NPtZ=PtZ(1,order);
 %% Data duplication to enforce periodicity
 NW=[W(1,:) W(1,:) W(1,:)];
 t=[(-2*pi+Th(1,:)) Th Th(1,:)+2*pi];
 % Cartesian coordinates
-pts=Pts(:,order); 
+pts=Pts(:,order);
 % Polar coordinates
 r=[Nr(1,:) Nr(1,:) Nr(1,:)];
 U=[NPtZ(1,:) NPtZ(1,:) NPtZ(1,:)];
@@ -57,7 +58,7 @@ T=-pi:dt:pi;
 
 
 % --------------------------------------------------------------------
-%% Smoothing 
+%% Smoothing
 % --------------------------------------------------------------------
 % We always convert back to cartesian for simplicity
 [ ruPTS ] = spline_fit_periodic( [r;U],NW,t,T,np,npp );
@@ -82,4 +83,3 @@ end
 %cpts=PTS(:,np+1:2*np);
 %ppts=newpts(:,np+1:2*np);
 end
-

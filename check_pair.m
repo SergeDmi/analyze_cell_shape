@@ -14,7 +14,7 @@ end
 scale=1.1;
 % By default we don't keep
 val=0;
-h=options.thickness_central;
+h=options.thickness;
 %% Here we plot
 p1=experiment.pre_pombe.points*options.pixel_size;
 p2=experiment.post_pombe.points*options.pixel_size;
@@ -51,7 +51,8 @@ subplot(4,2,[5:8])
 scatter3(p1(:,1),p1(:,2),p1(:,3),5,'k');
 hold all
 hImage=scatter3(p2(:,1),p2(:,2)+offset,p2(:,3),5,'r');
-title(['...' experiment(1).prename(end-20:end)], 'Interpreter', 'none');
+cc=min(numel(experiment(1).prename)-1,20);
+title(['...' experiment(1).prename(end-cc:end)], 'Interpreter', 'none');
 axis equal
 view([1,-0.7,-0.8])
 %rotate3d on

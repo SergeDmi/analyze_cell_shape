@@ -1,4 +1,4 @@
-function [ experiment ] = align_experiments( experiment )
+function [ experiment ] = align_experiments( experiment,options )
 % We align the two cells 
 %   Nothing magical
 
@@ -13,6 +13,10 @@ pp2=pp2-ones(size(pp2,1),1)*c2;
 %% PCA to find the main axis of pre points
 [co1,p1]=princom(pp1);
 p2=pp2*co1;
+
+if options.aligning > 0
+	 [~,p2,~]=princom(pp2);
+end
 
 %% Getting away with murder
 experiment.pre_pombe.points=p1;

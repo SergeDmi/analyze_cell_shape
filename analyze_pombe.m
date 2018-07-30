@@ -28,9 +28,32 @@ nf=size(faces,1);
 if options.centering > 0
     center=mean(points,1);
     points=points-ones(np,1)*center;
-    [~,points,~]=princom(points);
-	   disp('Auto centering and aligning cell')
+	if options.verbose>0
+		disp('Auto centering cell')
+	end
 end
+
+if options.aligning > 0
+	 [~,points,~]=princom(points);
+	 if options.verbose>0
+		 disp('Auto-aligning cell')
+	 end
+end
+
+
+% Now we're going to draw a central axis through the cell
+h=options.backbone.thickness/2.0;
+%pts_ix_center_z=logical((points(:,3)<h).*(points(:,3)>-h));
+%long_per=sort_by_angle(points(pts_ix_center_z,1:2),options);
+
+pts_ix_center_z=logical((points(:,2)<h).*(points(:,2)>-h));
+long_per=sort_by_angle(points(pts_ix_center_z,[1,3]),options);
+[X_backbone,Y_backbone]=get_cell_backbone(long_per,options.backbone);
+analysis.backbone_points=long_per;
+analysis.backbone=spline_fit_backbone([X_backbone',Y_backbone'],options.backbone);
+analysis.backbone_angular_deviation=compute_angular_deviations(analysis.backbone);
+
+
 %np=size(points,1);
 %center=mean(points,1);
 %points=points-ones(np,1)*center;
@@ -77,19 +100,19 @@ if (options.do_slice_analysis)
   latYZ=analysis.slices.latYZ(ix,:);
   sliceYZ=analysis.slices.per(ix).points(:,2:3);
 else
-  h=options.thickness_central/2.0;
+  h=options.thickness/2.0;
   gl=logical((points(:,1)<h).*(points(:,1)>-h));
   slice=points(gl,:);
   [~,sliceYZ,latYZ]=princom(slice(:,2:3));
 end
 
-per=smooth_periodic(sliceYZ,options);
-per=[per,per(:,end)];
+per=smooth_periodic(sliceYZ,options.central.spline);
+per=[per(:,end) per];
 analysis.central_perimeter=seglength(per);
-
-%analysis.slice_area=get_surface_slice(per);
 analysis.central_area=get_surface_slice(per);
-
+analysis.perimeter_angular_deviation=compute_angular_deviations(per(1:2,2:end)');
+analysis.central_spline=per;
+analysis.central_points=sliceYZ;
 % We do a PCA of the slice on the YZ plane
 
 %gl=logical((points(:,1)<h).*(points(:,1)>-h));
@@ -106,12 +129,12 @@ analysis.central_r1=sqrt(latYZ(1));
 analysis.central_r2=sqrt(latYZ(2));
 analysis.total_l1=max(points(:,1))-min(points(:,1));
 analysis.pt_mean_dist=mean_dist(points,faces);
-% We fit the central slice by a smooth periodic function
-%per= smooth_periodic( sliceYZ,options);
-%analysis.central_perimeter=seglength(per);
-%per=[per,per(:,end)];
-
 analysis.length=max(points(:,1))-min(points(:,1));
+
+%@TODO : unified way to compute circularity and straightness...
+% Tough
+
+
 
 %% Plotting if we need to
 if options.verbose>2
@@ -128,8 +151,51 @@ if options.verbose>2
     axis equal
 end
 
+end
 
+function [PTS]=sort_by_angle(pts,options)
+np=size(pts,1);
+Pts=zeros(3,np);
+Pts(1:2,:)=pts';
+cylpts=cart_to_cyl_z(Pts);
+[~,order]=sort(cylpts(1,:));
+PTS=Pts(1:2,order)';
+end
 
+function [devi]=compute_angular_deviations(pts)
+  dp=normalize_rows_ND(diff(pts));
+  ns=size(dp,1);
+  projs=dp(1:ns-1,:).*dp(2:ns,:);
+  angs=acos(sum(projs,2));
+  devi=std(angs);
+end
+
+function [PTS]=spline_fit_backbone(pts,options)
+  % Loading options
+  exclu=options.end_exclusion;
+  dt=options.spline.dt;
+  npp=options.spline.npp;
+  % getting the coordinates
+  x_max=max(pts(:,1));
+  x_min=min(pts(:,1));
+  ex_leng=exclu*(x_max-x_min);
+  x_max=x_max-ex_leng;
+  x_min=x_min+ex_leng;
+  new_x=(x_min:((x_max-x_min)*dt/(2.0*pi)):x_max);
+
+  np=size(pts,1);
+  n_new=numel(new_x);
+  PTS=zeros(n_new,2);
+
+  % Home-made spline fitting
+  dp=floor(np/npp);
+  npeff=ceil(np/npp);
+  indexes=1:np;
+  for i=1:npeff
+      ixes=indexes(i:dp:np);
+      PTS(:,2)=PTS(:,2)+spline(pts(ixes,1),pts(ixes,2),new_x)'/npeff;
+  end
+  PTS(:,1)=new_x';
 end
 
 function [M,w]=normalize_rows_3D(M)
@@ -167,6 +233,35 @@ function dNdAB=surface_grad(A,B,nA,nB)
 dNdAB=(1./(B-A)')*(nB-nA);
 end
 
+function [X,Y]=get_cell_backbone(long_per,options)
+n_pts=size(long_per,1);
+[xmin,n_xmin]=min(long_per(:,1));
+[xmax,n_xmax]=max(long_per(:,1));
+if n_xmin<n_xmax
+  if n_xmax==n_pts
+    ixes_r=(1:n_xmin);
+    ixes_l=((n_xmin+1):n_xmax);
+  else
+    ixes_r=[(n_xmax+1):n_pts (1:n_xmin)];
+    ixes_l=[(n_xmin+1):n_xmax];
+  end
+else
+  if n_xmin==n_pts
+    ixes_r=(1:n_xmax);
+    ixes_l=((n_xmax+1):n_xmin);
+  else
+    ixes_r=[(n_xmin+1):n_pts (1:n_xmax)];
+    ixes_l=[(n_xmax+1):n_xmin];
+  end
+end
+pts_l=long_per(ixes_l,:);
+pts_r=long_per(ixes_r,:);
+X=xmin:options.dx:xmax;
+y_left =spline(pts_l(:,1),pts_l(:,2),X);
+y_right=spline(pts_r(:,1),pts_r(:,2),X);
+Y=(y_left+y_right)/2.0;
+end
+
 function [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf)
     % Marginal gain
 	matR=zeros(np,np);
@@ -184,10 +279,6 @@ function [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf)
 
 
     for f=1:nf
-        %A(:)=points(faces(f,1),:);
-        %B(:)=points(faces(f,2),:);
-        %C(:)=points(faces(f,3),:);
-        %dir(:)=cross((B-A),(C-A));
 		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
 		matR(faces(f,1),faces(f,2))=1;
 		matR(faces(f,2),faces(f,3))=1;
@@ -355,7 +446,7 @@ function [res]=compute_perimeters(points,options)
         slice=points(gl,:);
         [~,~,res.latYZ(i,:)]=princom(slice(:,2:3));
         %scatter3(slice(:,1),slice(:,2),slice(:,3))
-        per= smooth_periodic( slice(:,2:3),options);
+        per= smooth_periodic( slice(:,2:3),options.central.spline);
 
         %
         per=[per,per(:,1)];
