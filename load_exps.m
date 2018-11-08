@@ -1,4 +1,4 @@
-function [experiments]=load_exps(root,folders)
+function [experiments]=load_exps(root,folders,filter)
 % We scan over many folders (experiments)
 % for which we get several sub-experiment
 % for which there is pre and post
@@ -9,6 +9,14 @@ function [experiments]=load_exps(root,folders)
 %% Ok now we have to declare the root and folders
 %root='/home/dmitrief/Sync/ownCloud/work/yeast_wall/pombe_3D_files/';
 %folders={'180214/','180220/','180222/'};
+if nargin<3
+	filter='';
+	n_filt=0;
+else
+	n_filt=length(filter);
+end
+
+
 nfolders=numel(folders);
 count=0;
 clear experiments;
@@ -34,25 +42,31 @@ for N=1:nfolders
 				exps=exps(expFlags);
 				ne=numel(exps);
 				% Now we go over all cells in pre/post
-				for e=1:ne					
+				for e=1:ne
 					expname_pre =[prename, exps(e).name,'/'];
 					fname_pre =dir([expname_pre,'*.ply']);
 					if numel(fname_pre)>0
 						c_pre=c_pre+1;
 						plyname=fname_pre(1).name;
-						posts=dir(postname);
-						pFlags=[posts.isdir];
-						posts=posts(pFlags);
-						np=numel(posts);
-						for p=1:np
-							expname_post=[postname,posts(p).name,'/'];
-							fname_post =dir([expname_post,'*.ply']);
-							if numel(fname_post)>0
-								if strcmp(fname_post(1).name(2:5),plyname(2:5))
-									count=count+1;
-									experiments(count).plyname=plyname;
-									experiments(count).prename =[expname_pre,plyname];
-									experiments(count).postname=[expname_post,fname_post(1).name];
+						do_it=1;
+						if n_filt>0
+							do_it=strcmp(plyname(1:n_filt),filter);
+						end
+						if do_it
+							posts=dir(postname);
+							pFlags=[posts.isdir];
+							posts=posts(pFlags);
+							np=numel(posts);
+							for p=1:np
+								expname_post=[postname,posts(p).name,'/'];
+								fname_post =dir([expname_post,'*.ply']);
+								if numel(fname_post)>0
+									if strcmp(fname_post(1).name(2:5),plyname(2:5))
+										count=count+1;
+										experiments(count).plyname=plyname;
+										experiments(count).prename =[expname_pre,plyname];
+										experiments(count).postname=[expname_post,fname_post(1).name];
+									end
 								end
 							end
 						end

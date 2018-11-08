@@ -18,6 +18,12 @@ h=options.thickness;
 %% Here we plot
 p1=experiment.pre_pombe.points*options.pixel_size;
 p2=experiment.post_pombe.points*options.pixel_size;
+
+b1=experiment.pre_pombe.backbone;
+b2=experiment.post_pombe.backbone;
+
+f1=experiment.pre_pombe.fitted_backbone;
+f2=experiment.post_pombe.fitted_backbone;
 offset=(max(p1(:,2))-min(p2(:,2)))*1.3;
 pp=[p1;p2];
 
@@ -26,36 +32,55 @@ figure
 subplot(4,2,1)
 gl1=logical((p1(:,3)<h).*(p1(:,3)>-h));
 scatter(p1(gl1,1),p1(gl1,2),5,'k');
+hold all
+scatter(b1(:,1),b1(:,2),15,'k*');
+plot(f1(:,1),f1(:,2),'k');
 title('top view')
 axis equal
 axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,2)) max(pp(:,2))])
 subplot(4,2,2)
 gl2=logical((p2(:,3)<h).*(p2(:,3)>-h));
 scatter(p2(gl2,1),p2(gl2,2),5,'r');
+hold all
+scatter(b2(:,1),b2(:,2),15,'r*');
+plot(f2(:,1),f2(:,2),'r');
 axis equal
 axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,2)) max(pp(:,2))])
 
 subplot(4,2,3)
 gl1=logical((p1(:,2)<h).*(p1(:,2)>-h));
 scatter(p1(gl1,1),p1(gl1,3),5,'k');
+hold all
+scatter(b1(:,1),b1(:,3),15,'k*');
+plot(f1(:,1),f1(:,3),'k');
 title('side view')
 axis equal
 axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,3)) max(pp(:,3))])
 subplot(4,2,4)
 gl2=logical((p2(:,2)<h).*(p2(:,2)>-h));
 scatter(p2(gl2,1),p2(gl2,3),5,'r');
+hold all
+scatter(b2(:,1),b2(:,3),15,'r*');
+plot(f2(:,1),f2(:,3),'r');
 axis equal
 axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,3)) max(pp(:,3))])
 
 subplot(4,2,[5:8])
 scatter3(p1(:,1),p1(:,2),p1(:,3),5,'k');
 hold all
+scatter3(b1(:,1),b1(:,2),b1(:,3),5,'k*');
+plot3(f1(:,1),f1(:,2),f1(:,3),'r');
+
+scatter3(b2(:,1),b2(:,2)+offset,b2(:,3),5,'r*');
+plot3(f2(:,1),f2(:,2)+offset,f2(:,3),'k');
 hImage=scatter3(p2(:,1),p2(:,2)+offset,p2(:,3),5,'r');
 cc=min(numel(experiment(1).prename)-1,20);
 title(['...' experiment(1).prename(end-cc:end)], 'Interpreter', 'none');
 axis equal
 view([1,-0.7,-0.8])
 %rotate3d on
+
+
 
 %% Here we wait for user action
 
@@ -101,7 +126,6 @@ set(hFig,  'DeleteFcn',     {@callback_quit});
 if nargout > 0
     waitfor(hImage);
 end
-
 
 
 
