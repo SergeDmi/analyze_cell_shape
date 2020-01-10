@@ -1,4 +1,4 @@
-function val = check_pair(experiment, options)
+function checked = check_states(experiment, options)
 % Display a pair and wait for user to decide wether to keep or not
 % S. Dmitrieff  2018
 % Institut Jacques Monod
@@ -9,76 +9,67 @@ if nargin < 1
 end
 
 if nargin < 2
-    options=pombe_default_options();
+    options=analysis_default_options();
 end
+
+pixel_size=1.0;
+if isfield(options,'pixel_size')
+  pixel_size=options.pixel_size;
+end
+
+
 scale=1.1;
 % By default we don't keep
-val=0;
+checked=0;
 h=options.thickness;
 %% Here we plot
-p1=experiment.pre_pombe.points*options.pixel_size;
-p2=experiment.post_pombe.points*options.pixel_size;
+n_states=numel(experiment.states);
 
-b1=experiment.pre_pombe.backbone;
-b2=experiment.post_pombe.backbone;
-
-f1=experiment.pre_pombe.fitted_backbone;
-f2=experiment.post_pombe.fitted_backbone;
-offset=(max(p1(:,2))-min(p2(:,2)))*1.3;
-pp=[p1;p2];
+if isfield(options,'add_offset')
+  add_offset=options.add_offset;
+else
+  p1=experiment.states(1).shape.points*pixel_size;
+  add_offset=(max(p1(:,2))-min(p1(:,2)))/3.0;
+end
 
 
 figure
-subplot(4,2,1)
-gl1=logical((p1(:,3)<h).*(p1(:,3)>-h));
-scatter(p1(gl1,1),p1(gl1,2),5,'k');
-hold all
-scatter(b1(:,1),b1(:,2),15,'k*');
-plot(f1(:,1),f1(:,2),'k');
-title('top view')
-axis equal
-axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,2)) max(pp(:,2))])
-subplot(4,2,2)
-gl2=logical((p2(:,3)<h).*(p2(:,3)>-h));
-scatter(p2(gl2,1),p2(gl2,2),5,'r');
-hold all
-scatter(b2(:,1),b2(:,2),15,'r*');
-plot(f2(:,1),f2(:,2),'r');
-axis equal
-axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,2)) max(pp(:,2))])
+lasty=-add_offset;
 
-subplot(4,2,3)
-gl1=logical((p1(:,2)<h).*(p1(:,2)>-h));
-scatter(p1(gl1,1),p1(gl1,3),5,'k');
-hold all
-scatter(b1(:,1),b1(:,3),15,'k*');
-plot(f1(:,1),f1(:,3),'k');
-title('side view')
-axis equal
-axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,3)) max(pp(:,3))])
-subplot(4,2,4)
-gl2=logical((p2(:,2)<h).*(p2(:,2)>-h));
-scatter(p2(gl2,1),p2(gl2,3),5,'r');
-hold all
-scatter(b2(:,1),b2(:,3),15,'r*');
-plot(f2(:,1),f2(:,3),'r');
-axis equal
-axis(scale*[min(pp(:,1)) max(pp(:,1)) min(pp(:,3)) max(pp(:,3))])
+for s=1:n_states
+  pixel_size
+  points=experiment.states(s).shape.points*pixel_size;
+  offset=lasty+add_offset-min(points(:,2));
+  lasty=offset+(max(points(:,2))-min(points(:,2)));
 
-subplot(4,2,[5:8])
-scatter3(p1(:,1),p1(:,2),p1(:,3),5,'k');
-hold all
-scatter3(b1(:,1),b1(:,2),b1(:,3),5,'k*');
-plot3(f1(:,1),f1(:,2),f1(:,3),'r');
+  % Subplot of the top view
+  subplot(4,n_states,s)
+  gl1=logical((points(:,3)<h).*(points(:,3)>-h));
+  scatter(points(gl1,1),points(gl1,2),5,'k');
+  title('top view')
+  axis equal
+  axis(scale*[min(points(:,1)) max(points(:,1)) min(points(:,2)) max(points(:,2))])
 
-scatter3(b2(:,1),b2(:,2)+offset,b2(:,3),5,'r*');
-plot3(f2(:,1),f2(:,2)+offset,f2(:,3),'k');
-hImage=scatter3(p2(:,1),p2(:,2)+offset,p2(:,3),5,'r');
-cc=min(numel(experiment(1).prename)-1,20);
-title(['...' experiment(1).prename(end-cc:end)], 'Interpreter', 'none');
-axis equal
-view([1,-0.7,-0.8])
-%rotate3d on
+  % Subplot of the side view
+  subplot(4,n_states,n_states+s)
+  gl1=logical((points(:,2)<h).*(points(:,2)>-h));
+  scatter(points(gl1,1),points(gl1,3),5,'k');
+  title('side view')
+  axis equal
+  axis(scale*[min(points(:,1)) max(points(:,1)) min(points(:,3)) max(points(:,3))])
+
+  % subplot of all cells
+  subplot(4,n_states,[(2*n_states+1):4*n_states]);
+  hold all
+  hImage=scatter3(points(:,1),points(:,2)+offset,points(:,3),5,'k');
+
+
+
+end
+cc=min(numel(experiment.states(1).name)-1,20);
+title(['...' experiment.states(1).name(end-cc:end)], 'Interpreter', 'none');
+axis equal;
+view([1,0.5,0.5])
 
 
 
@@ -101,7 +92,7 @@ set(hFig,  'DeleteFcn',     {@callback_quit});
         if eventData.Character == ' '
             %reset_view;
             %set_selection([], []);
-			val=1;
+			checked=1;
 			callback_quit();
         elseif eventData.Character == 'q'
             callback_quit();

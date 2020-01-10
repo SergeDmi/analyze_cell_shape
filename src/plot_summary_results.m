@@ -18,6 +18,9 @@ function plot_summary_results(results,figure_ids,options)
     state_indices=state_indices+options.x_offset;
   end
 
+  if ~isfield(options,'color')
+    options.color='b';
+  end
 
   means_states=zeros(n_states,1);
   stds_states =zeros(n_states,1);

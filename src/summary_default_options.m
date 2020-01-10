@@ -8,6 +8,6 @@ function [ options ] = summary_default_options()
   %% What to compare between experiments
   options.comparisons={'surface','volume','length','mean_circ'};
 
-
-
+  %% Do we visually check cells ?
+  options.check_states=0;
 end
