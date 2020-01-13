@@ -1,28 +1,15 @@
-# Python-Tools
-This repository contains generic but useful python utilities
+# Analyze Cell Shape
+This code is meant to analyze cell shapes stored in ply files.
+Mostly designed for rod-like cells, e.g. yeast.
+To segment cell shape, we recommend Limeseg : https://imagej.net/LimeSeg
 
-## seplot
+## Operation
+Simple functions to analyze the shape of a single cell, or to compare cells at different stages.
 
- A command line plot maker.  
- Examples :  
- seplot position.txt  
- seplot position.txt color=red position2.txt  
- seplot averages.txt y='A[:,1]-A[:,2]' dy='A[:,3]/sqrt(A[:,4])' ylabel='$z$ in nm' color=cmyk.Green
+### Single cell analysis.
+See demo_single_cell.m
 
-![Example](plot.png)
-
-## sio_tools
-
-  Simple I/O utilities used by other projects
-  Reading/writing array from/to file
-  Running bash jobs from python and returning output
-  File text cleanup and parsing
-  And quite a bit more…
-
-## ply :
-Utilities to work with ply files
-
-## shooting
-Utilities implementing the shooting method
+### Comparing states
+See demo_summary.m
 
 # Serge Dmitrieff -- http://biophysics.fr
