@@ -1,5 +1,5 @@
 % Loading local file directory
-addpath(genpath('.'));
+startup
 % Preparing options
 options.summary_options=summary_default_options();
 options.analysis_options=analysis_default_options();

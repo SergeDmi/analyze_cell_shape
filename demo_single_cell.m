@@ -1,5 +1,5 @@
 % Loading local file directory
-addpath(genpath('.'));
+startup
 % Adding names
 cell=import_ply('sphere.ply');
 analysis=analyze_shape(cell)
