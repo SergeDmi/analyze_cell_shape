@@ -28,7 +28,7 @@ if isfield(options,'pixel_size')
 end
 
 %% Here we plot
-n_states=numel(experiment.states)
+n_states=numel(experiment.states);
 
 
 %coeffs=experiment.pre_analysis.coeffs;

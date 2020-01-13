@@ -419,7 +419,9 @@ function [res]=make_analyze_slices(points,options)
       gl=logical((points(:,1)<(pos+h)).*(points(:,1)>(pos-h)));
       slice=points(gl,:);
       % computing eigenvalues
-      [~,~,res.latYZ(i,:)]=get_pca_cov(slice(:,2:3),1);
+      [~,~,lyz]=get_pca_cov(slice(:,2:3),1);
+      res.latYZ(i,1)=lyz(1);
+      res.latYZ(i,2)=lyz(4);
       % computing a smoother slice
       per= smooth_periodic( slice(:,2:3),options.central.spline);
 

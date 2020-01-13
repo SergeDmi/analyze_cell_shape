@@ -33,13 +33,13 @@ end
 %% Looping over all experiments
 for n=1:Nexp
   %% We align the shapes
-	experiments(n)=align_experiments(experiments(n),options);
+	experiments(n)=align_experiments(experiments(n),summary_options);
   checked=1;
 
   if summary_options.check_states
     disp('Manually checking experiments')
     disp(' press [SPACE] to keep, [q] to discard')
-    checked=check_states(experiments(n));
+    [checked,experiments(n)]=check_states(experiments(n),analysis_options);
   end
 
 

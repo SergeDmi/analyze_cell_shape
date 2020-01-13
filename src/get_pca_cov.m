@@ -2,8 +2,8 @@ function [rotmat, rotated, eigenvalues]=get_pca_cov(data,axis)
 % PCA analysis of data
 %   data is a matrix
 %   axis is the axis of data repetition
-%  e.g. for a set of 3D points data , size(data)=3,N    , then axis=2 (default)
-%  e.g. for a set of 3D points data , size(data)=N,3    , then axis=1
+%  e.g. for a set of N 3D-points data , size(data)=3,N  : then axis=2 (default)
+%  e.g. for a set of N 3D-points data , size(data)=N,3  : then axis=1
 %
 % One should definitely use MATLAB's princom
 % But this way, no licence problem
