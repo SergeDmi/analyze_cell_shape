@@ -23,7 +23,7 @@ np=size(points,1);
 nf=size(faces,1);
 center=mean(points,1);
 points=points-ones(np,1)*center;
-[coefs,points,~]=princom(points);
+[coefs,points,~]=get_pca_cov(points,1);
 normals=normals*coefs;
 
 %recomputing normals
@@ -64,11 +64,11 @@ NP=zeros(3,1);
 NS=zeros(3,1);
 
 
- 
+
 
 
 for f=1:nf
-	
+
 	for i=1:3
 		if i==1
 			iA=faces(f,1);
@@ -80,7 +80,7 @@ for f=1:nf
 			iA=faces(f,2);
 			iB=faces(f,3);
 		end
-		
+
         if matR(iA,iB)==0 && matR(iB,iA)==0
            matA(iA,iB)=create_link(iA,iB,points,n_psi,params);
         end
@@ -100,7 +100,7 @@ l0=norm(BA)
 %NS(:)=(n_sss(iA,:)+n_sss(iB,:))'/2.0;
 
 
-        
+
 end
 
 function [normsP]=get_normals(points,faces,np,nf)
@@ -113,29 +113,29 @@ function [normsP]=get_normals(points,faces,np,nf)
         normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
     end
     normsP(:,:)=normalize_rows_3D(normsP);
-	
+
 end
 
 
 function [normsP,surfP]=get_normals_surf(points,faces,np,nf)
     % Marginal gain
-	
+
 	normsP=zeros(np,3);
 	cntfP=zeros(np,1);
     dir=zeros(1,3);
 	col3=ones(3,1);
 
-	
+
     for f=1:nf
 		dir(:)=cross((points(faces(f,2),:)-points(faces(f,1),:)),(points(faces(f,3),:)-points(faces(f,1),:)));
-      
+
 		normsP(faces(f,:),:)=normsP(faces(f,:),:)+col3*dir;
 		cntfP(faces(f,:))=cntfP(faces(f,:))+1;
-		
+
     end
     [normsP(:,:),surfP]=normalize_rows_3D(normsP);
 	surfP(:)=surfP./cntfP;
-	
+
 end
 
 function [surf]=get_surface_slice(per)
@@ -167,7 +167,7 @@ function [surf,vol]=get_surface_volume(points,face)
         % This is so freacking cool !!!
         vol=vol+abs(dot(pos,dir));
     end
-    surf=surf/2; 
+    surf=surf/2;
     vol=vol/12.0;
 end
 
@@ -227,7 +227,7 @@ PR(:)=reshape(points',[3*np,1]);
 OR=MR>0;
 KR(:)=KR>0;
 
-% 
+%
 
 DEF=DEF-OR;
 
@@ -261,6 +261,6 @@ while t<Tend
 	FDP(:,:)=(DP-L0*DP./NDP);
 	PR(:)=PR(:)+dt*(sum(FDP,2)+NR*P);
 	toc
-	
+
 end
 end

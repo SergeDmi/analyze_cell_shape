@@ -108,7 +108,7 @@ ske=ske(3:(end-2),:);
 
 arclen=get_arclength(ske)';
 % we align the curve
-%[~,ske]=princom(ske);
+%[~,ske]=get_pca_cov(ske,1);
 % we compute the curvature of y,z as a function of the arclength
 
 px=polyfit(arclen,ske(:,1),3);

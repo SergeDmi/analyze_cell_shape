@@ -27,7 +27,7 @@ pp1=experiment.states(1).shape.points*pixel_size;
 c1=mean(pp1);
 pp1=pp1-ones(size(pp1,1),1)*c1;
 % aligning
-[co1,p1]=princom(pp1);
+[co1,p1]=get_pca_cov(pp1,1);
 experiment.states(1).shape.points=p1/pixel_size;
 
 for i=2:n_states
@@ -38,7 +38,7 @@ for i=2:n_states
     % We align to the first stage
     p2=pp2*co1;
   else
-    [~,p2,~]=princom(pp2);
+    [~,p2,~]=get_pca_cov(pp2,1);
   end
   experiment.states(i).shape.points=p2/pixel_size;
 

@@ -3,7 +3,7 @@ function [ options ] = analysis_default_options()
 %
 
   %% Options for program behaviour
-  options.verbose=0;
+  options.verbose=1;
 	options.check_pairs=0;
   options.do_shape_resize=0;
 
@@ -12,11 +12,11 @@ function [ options ] = analysis_default_options()
   options.do_slice_analysis=1;
   options.do_curvature_analysis=0;
   options.do_backbone_analysis=0;
-  
+
 	%% Options for analysis
 	options.pixel_size=1.0;
 	%options.pixel_size=0.0714;
-  options.centering=0;
+  options.centering=1;
   options.aligning=1;
 	options.thickness=0.25;
 

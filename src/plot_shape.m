@@ -27,7 +27,7 @@ if numel(np)==1
 else
 	bli=np;
 end
-figure
+
 scatter3(pts(bli,1),pts(bli,2),pts(bli,3))
 
 if plot_normals
