@@ -1,5 +1,6 @@
 .directory
 *.csv
+*.mat
 additional_scripts
 blob
 
