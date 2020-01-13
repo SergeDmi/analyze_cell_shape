@@ -204,7 +204,7 @@ for i = 1:NumElements
    eval(['CurPropertyTypes=PropertyTypes.',ElementNames{i},';']);
    NumProperties = size(CurPropertyNames,2);
    
-%   fprintf('Reading %s...\n',ElementNames{i});
+   %fprintf('Reading %s...\n',ElementNames{i});
       
    if ~Format	%%% read ASCII data %%%
       for j = 1:NumProperties
@@ -319,6 +319,7 @@ for i = 1:NumElements
             
             % list type, one property (fast if lists are usually the same length)
             while j < ElementCount(i)
+               BufSize = min(ElementCount(i)-j,BufSize);
                Position = ftell(fid);
                % read in BufSize count values, assuming all counts = SkipNum
                [Buf,BufSize] = fread(fid,BufSize,Type{1},SkipNum*TypeSize2(1));
