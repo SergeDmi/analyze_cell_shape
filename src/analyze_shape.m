@@ -50,6 +50,7 @@ if options.do_backbone_analysis
   analysis.backbone_curv  =get_backbone_curvs(analysis.backbone_points);
 end
 
+
 %% We can already compute surface area.
 [analysis.surface,analysis.volume]=get_surface_volume(points,faces);
 [normsP,normsF,surfP,surfF,matR]=get_normals(points,faces,np,nf);
@@ -359,21 +360,15 @@ function [surf,vol]=get_surface_volume(points,face)
   A=zeros(1,3);
   B=zeros(1,3);
   C=zeros(1,3);
-  dir=zeros(1,3);
-  pos=zeros(1,3);
   for f=1:nf
       A(:)=points(face(f,1),:);
       B(:)=points(face(f,2),:);
       C(:)=points(face(f,3),:);
-      dir(:)=cross((B-A),(C-A));
-      surf=surf+norm(dir);
-      % Here there is a small trick
-      pos(:)=(A+B+C);
-      vol=vol+abs(dot(pos,dir));
-      % This is so freacking cool !!!
+      surf=surf+norm(cross((B-A),(C-A)));
+      vol=vol+abs(dot(A,cross(B,C)));
   end
   surf=surf/2;
-  vol=vol/12.0;
+  vol=vol/6.0;
 end
 
 % Computing the mean distance between connected points
