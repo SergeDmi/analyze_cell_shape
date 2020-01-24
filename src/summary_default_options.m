@@ -9,5 +9,5 @@ function [ options ] = summary_default_options()
   options.comparisons={'surface','volume','length','mean_circ'};
 
   %% Do we visually check cells ?
-  options.check_states=1;
+  options.check_states=0;
 end

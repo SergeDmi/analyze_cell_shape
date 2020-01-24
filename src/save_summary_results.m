@@ -25,16 +25,16 @@ function save_summary_results(results,options)
     n_exps=size(results(1).(comparisons{c}).values,1);
     values=zeros(n_exps,n_states);
     % this is to save average and std
-    mean_std_states=zeros(n_states,2);
+    mean_std_states=zeros(n_states,3);
     for s=1:n_states
       values(:,s)=results(s).(comparisons{c}).values;
-      mean_std_states(s,:)=[results(s).(comparisons{c}).mean,results(s).(comparisons{c}).std];
+      mean_std_states(s,:)=[state_indices(s),results(s).(comparisons{c}).mean,results(s).(comparisons{c}).std];
     end
     name=[save_prefix '_values_' comparisons{c} '.csv'];
     write_csv_with_names(name,values,[],state_indices)
     % now saving averaged values
     name=[save_prefix '_averaged_' comparisons{c} '.csv'];
-    write_csv_with_names(name,mean_std_states,{'Mean','Std dev'},state_indices)
+    write_csv_with_names(name,mean_std_states,{'Stage','Mean','Std dev'})
 
 
   end

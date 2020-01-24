@@ -41,7 +41,8 @@ if options.centering > 0
 end
 % Aligning the point
 if options.aligning > 0
-	 [~,points,~]=get_pca_cov(points,1);
+	 %[~,points,~]=get_pca_cov(points,1);
+   [~,points,~]=princom(points);
 	  disp_if_verbose('Auto-aligning cell',options)
 end
 if options.do_backbone_analysis
@@ -92,7 +93,8 @@ else
   h=options.thickness/2.0;
   gl=logical((points(:,1)<h).*(points(:,1)>-h));
   slice=points(gl,:);
-  [~,sliceYZ,latYZ]=get_pca_cov(slice(:,2:3),1);
+  %[~,sliceYZ,latYZ]=get_pca_cov(slice(:,2:3),1);
+  [~,sliceYZ,latYZ]=princom(slice(:,2:3));
 end
 
 %% We can approximate the centeral slice using a custom spline fitting method
@@ -202,7 +204,8 @@ function [curvs]=get_backbone_curvs(ske)
 % we compute the arclength along the curve
 arclen=get_arclength(ske)';
 % we align the curve
-[~,ske]=get_pca_cov(ske,1);
+%[~,ske]=get_pca_cov(ske,1);
+[~,ske]=princom(ske);
 % we compute the curvature of y,z as a function of the arclength
 py=polyfit(arclen,ske(:,2),2);
 pz=polyfit(arclen,ske(:,3),2);
@@ -419,9 +422,11 @@ function [res]=make_analyze_slices(points,options)
       gl=logical((points(:,1)<(pos+h)).*(points(:,1)>(pos-h)));
       slice=points(gl,:);
       % computing eigenvalues
-      [~,~,lyz]=get_pca_cov(slice(:,2:3),1);
-      res.latYZ(i,1)=lyz(1);
-      res.latYZ(i,2)=lyz(4);
+      %[~,~,lyz]=get_pca_cov(slice(:,2:3),1);
+      %[~,~,lyz]=princom(slice(:,2:3));
+      %res.latYZ(i,1)=lyz(1);
+      %res.latYZ(i,2)=lyz(4);
+      [~,~,res.latXY(i,:)]=princom(slice(:,2:3));
       % computing a smoother slice
       per= smooth_periodic( slice(:,2:3),options.central.spline);
 

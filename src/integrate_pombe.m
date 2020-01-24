@@ -23,7 +23,8 @@ np=size(points,1);
 nf=size(faces,1);
 center=mean(points,1);
 points=points-ones(np,1)*center;
-[coefs,points,~]=get_pca_cov(points,1);
+%[coefs,points,~]=get_pca_cov(points,1);
+[coefs,points,~]=princom(points);
 normals=normals*coefs;
 
 %recomputing normals
