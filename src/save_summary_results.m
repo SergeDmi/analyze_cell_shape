@@ -13,6 +13,14 @@ function save_summary_results(results,options)
     state_indices=1:n_states;
   end
 
+  state_names{1}='';
+  if ~isfield(options,'state_names')
+    for i=1:numel(state_indices)
+      index=state_indices(i);
+      state_names{i}=['stage ' num2str(index)];
+    end
+  end
+
   if isfield(options,'save_prefix')
     save_prefix=options.save_prefix;
   else
@@ -31,7 +39,7 @@ function save_summary_results(results,options)
       mean_std_states(s,:)=[state_indices(s),results(s).(comparisons{c}).mean,results(s).(comparisons{c}).std];
     end
     name=[save_prefix '_values_' comparisons{c} '.csv'];
-    write_csv_with_names(name,values,[],state_indices)
+    write_csv_with_names(name,values,state_names)
     % now saving averaged values
     name=[save_prefix '_averaged_' comparisons{c} '.csv'];
     write_csv_with_names(name,mean_std_states,{'Stage','Mean','Std dev'})
